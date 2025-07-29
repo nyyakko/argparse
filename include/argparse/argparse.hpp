@@ -717,13 +717,12 @@ public:
     return *this;
   }
 
-  template <typename T, typename std::enable_if<std::is_floating_point<T>::value>::type * = nullptr>
-  auto &store_into(T &var) {
+  auto &store_into(double &var) {
     if (m_default_value.has_value()) {
-      var = std::any_cast<T>(m_default_value);
+      var = std::any_cast<double>(m_default_value);
     }
     action([&var](const auto &s) {
-      var = details::parse_number<T, details::chars_format::general>()(s);
+      var = details::parse_number<double, details::chars_format::general>()(s);
       return var;
     });
     return *this;
@@ -1599,6 +1598,16 @@ private:
     return result;
   }
 
+  auto has_value() const -> bool {
+    if (m_default_value.has_value()) {
+      throw std::logic_error("Argument with default value always presents");
+    }
+    if (m_values.empty()) {
+      return false;
+    }
+    return m_values.front().has_value();
+  }
+
   void set_usage_newline_counter(int i) { m_usage_newline_counter = i; }
 
   void set_group_idx(std::size_t i) { m_group_idx = i; }
@@ -1943,6 +1952,10 @@ public:
   template <typename T = std::string>
   auto present(std::string_view arg_name) const -> std::optional<T> {
     return (*this)[arg_name].present<T>();
+  }
+
+  auto has_value(std::string_view arg_name) const {
+    return (*this)[arg_name].has_value();
   }
 
   /* Getter that returns true for user-supplied options. Returns false if not
